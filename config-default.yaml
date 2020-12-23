@@ -1,0 +1,73 @@
+﻿# CC0 - free software.
+# To the extent possible under law, all copyright and related or neighboring
+# rights to this work are waived.
+
+# Configure your flat criteria. Not all fields are used by all sites.
+search:
+  rooms_min: 4
+  rooms_max: 5
+  area_min: 90
+  area_max: 130
+  rent_max: 1000
+  floor_min: 2
+  floor_max: 100
+  # Wohnberechtigungsschein (If you don't know what this is leave it false)
+  wbs: false
+
+  # DeGeWo district IDs, select the ones you'd like by commenting/uncommenting.
+  degewo_districts:
+    - "2" # Marzahn-Hellersdorf
+    - "3" # Lichtenberg
+    - "4-8" # Spandau
+    - "7" # Treptow-Köpenick
+    - "28" # Mitte
+    - "29" # Neukölln
+    - "33" # Charlottenbug-Wilmersdorf
+    - "40-67" # Umland
+    - "46" # Friedrichshain-Kreuzberg
+    - "58" # Steglitz-Zehlendorf
+    - "60" # Tempelhof-Schöneberg
+    - "64" # Reinickendorf
+    - "71" # Pankow
+
+  # Gewobag districts, select the ones you'd like by commenting/uncommenting.
+  gewobag_districts:
+    - "charlottenburg-wilmersdorf"
+    - "charlottenburg-wilmersdorf-grunewald"
+    - "friedrichshain-kreuzberg"
+    - "friedrichshain-kreuzberg-friedrichshain"
+    - "friedrichshain-kreuzberg-kreuzberg"
+    - "lichtenberg"
+    - "lichtenberg-alt-hohenschoenhausen"
+    - "lichtenberg-falkenberg"
+    - "lichtenberg-fennpfuhl"
+    - "neukoelln"
+    - "neukoelln-britz"
+    - "neukoelln-buckow"
+    - "neukoelln-rudow"
+    - "pankow"
+    - "pankow-prenzlauer-berg"
+    - "reinickendorf"
+    - "reinickendorf-tegel"
+    - "reinickendorf-waidmannslust"
+    - "spandau"
+    - "spandau-haselhorst"
+    - "spandau-staaken"
+    - "steglitz-zehlendorf"
+    - "steglitz-zehlendorf-lichterfelde"
+    - "tempelhof-schoeneberg"
+    - "tempelhof-schoeneberg-mariendorf"
+    - "treptow-koepenick"
+    - "treptow-koepenick-adlershof"
+    - "treptow-koepenick-alt-treptow"
+
+# Enter your email login here, emails will be sent from the *user* address to
+# the *recipient* address.
+mail:
+  server: <fill me>
+  user: <fill me>
+  password: <fill me>
+  from: Flatcrawler <<fill me>>
+  reply_to: Flatcrawler <<fill me>>
+  recipient: <fill me>
+  bcc_recipients: []

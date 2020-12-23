@@ -32,16 +32,17 @@ from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 import requests
 import sendmail
+import yaml
 from sites import sites as site_configs
-from config import MailConfig
 
 seconds = 1
 minutes = 60 * seconds
 hours = 60 * minutes
 
+mail_config = sendmail.MailConfig()
 
 ### Basic settings
-RECIPIENTS = [MailConfig.recipient, *MailConfig.bcc_recipients]
+RECIPIENTS = [mail_config.recipient, *mail_config.bcc_recipients]
 CHECK_INTERVAL = 1 * hours
 URL_PRINT_LENGTH = 300  # print at maximimum n chars of the url in error messages
 KNOWN_FILE = "known.txt"
@@ -82,6 +83,28 @@ LOG_ERR = 'ERROR: "{}" - {}'
 
 VERBOSITY = 0
 QUIET = False
+
+
+class SearchConfig:
+    def __init__(self):
+        with open("config.yaml", "r") as config_file:
+            data = yaml.safe_load(config_file)
+            if "search" in data:
+                self.config = data["search"].copy()
+                degewo_districts_joined = "%2C+".join(self.config["degewo_districts"])
+                self.config["degewo_districts"] = degewo_districts_joined
+                gewobag_districts_joined = "&bezirke%5B%5D=".join(
+                    self.config["gewobag_districts"]
+                )
+                self.config["gewobag_districts"] = gewobag_districts_joined
+                self.config["no_1st_floor"] = (
+                    True if self.config["floor_min"] > 1 else False
+                )
+            if "site-blocklist" in data:
+                self.config["site-blocklist"] = data["site-blocklist"].copy()
+
+    def get_config(self):
+        return self.config
 
 
 class Site:
@@ -263,6 +286,8 @@ class OfferDetails:
 
 
 def main(options):
+    search_config = SearchConfig()
+
     """Check all pages, send emails if any offers or errors."""
     results = []
 
