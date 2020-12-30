@@ -8,7 +8,7 @@ flatcrawler -- Crawl flat offer websites for new flats.
 If run periodically, this script will notify you of new offers quickly as they appear
 online.
 
-For each site configured in sites.py, retrieve the website HTML and scan it for the
+For each site configured in sites.yaml, retrieve the website HTML and scan it for the
 presence of certain strings and links. Create `Offer` objects for each expose link
 found. Will optionally retrieve the offer links as well scan them for additional details
 on the offer.
@@ -33,7 +33,6 @@ from bs4 import BeautifulSoup
 import requests
 import sendmail
 import yaml
-from sites import sites as site_configs
 
 seconds = 1
 minutes = 60 * seconds
@@ -109,16 +108,18 @@ class SearchConfig:
 
 class Site:
     """
-    A website to be searched for new flats. Takes a *config* dict, which should include
-    most of the fields specified in `sites.py`.
+    A website to be searched for new flats. Takes a *site_config* dict, which should
+    include most of the fields specified in `sites.yaml` and a *search_config* dict
+    which specifies the search criteria as configured in `config.yaml`.
     """
 
-    def __init__(self, config):
-        self.config = defaultdict(lambda: None, config)
+    def __init__(self, name, site_config, search_config):
+        self.name = name
+        self.config = defaultdict(lambda: None, site_config)
+        self.search_config = defaultdict(lambda: None, search_config.get_config())
         self.offers = set()
         self.error = None
-        self.name = self.config["name"]
-        self.url = self.config["url"]
+        self.url = self.config["url"].format(**self.search_config)
         self.none_str = self.config["none-str"]
         self.success_str = self.config["success-str"]
         self.expose_url_pattern = self.config["expose-url-pattern"]
@@ -168,6 +169,9 @@ class Site:
             elif self.none_str and (self.none_str in result.text):
                 v(LOG_NO_FLATS.format(self.name))
             else:
+                debug_dump_site_html(self.name, result.text)
+                print(self.none_str)
+                print(self.success_str)
                 self.error = ERR_CONNECTION.format(
                     self.name, truncate(self.url, URL_PRINT_LENGTH)
                 )
@@ -291,11 +295,13 @@ def main(options):
     """Check all pages, send emails if any offers or errors."""
     results = []
 
-    for site_config in site_configs:
-        site = Site(site_config)
-        site.check(include_known=options.include_known)
-        if any(site.offers) or site.error is not None:
-            results.append(site)
+    with open("sites.yaml", "r") as sites:
+        data = yaml.safe_load(sites)
+        for site_name in data:
+            site = Site(site_name, data[site_name], search_config)
+            site.check(include_known=options.include_known)
+            if any(site.offers) or site.error is not None:
+                results.append(site)
     if results:
         v(LOG_NEW_RESULTS)
         mail_subject, mail_text = format_mail(results)
