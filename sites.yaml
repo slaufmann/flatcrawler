@@ -42,7 +42,7 @@ Bau- und Siedlungsgenossenschaft Postheimstätte e.G.:
 Wohnungsbaugenossenschaft Zentrum e.G.:
   url: https://www.wbg-zentrum.de/wohnen/wohnungsangebot-2/wohnungsangebot/
   none-str: Derzeit kann Ihnen die Geschäftsstelle keine Wohnungsangebote unterbreiten!
-  success-str: <div class="wpb_text_column wpb_content_element ">
+  success-str: target="_blank">weiter</a>
   expose-url-pattern: https://www\.wbg-zentrum\.de/wp-content/uploads/.+?/.+?/.+?\.pdf
 Wohnungsbaugenossenschaft Altglienicke e.G.:
   url: https://www.wg-altglienicke.de/wohnungen
