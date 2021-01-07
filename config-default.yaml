@@ -61,6 +61,13 @@ search:
     - "treptow-koepenick-adlershof"
     - "treptow-koepenick-alt-treptow"
 
+# Sites to NOT search on. Add a site by adding the entry name as given in sites.yaml.
+# Example:
+# site-blocklist:
+#   - Berolina
+#   - Wohnungsbaugenossenschaft Altglienicke e.G.
+site-blocklist:
+
 # Enter your email login here, emails will be sent from the *user* address to
 # the *recipient* address.
 mail:

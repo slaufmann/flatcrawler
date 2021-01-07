@@ -73,6 +73,7 @@ ERR_EXPOSE_CONNECTION = (
 ERR_EXPOSE_NOT_FOUND = ERR_NOT_FOUND
 
 LOG_CRAWLING = "crawling {}"
+LOG_NOT_CRAWLING = "NOT crawling {} - on blocklist"
 LOG_NO_FLATS = "  no flats found at {}"
 LOG_NEW_RESULTS = ":: new results found ::"
 LOG_EMAIL_SENT = ":: email sent ::"
@@ -298,10 +299,13 @@ def main(options):
     with open("sites.yaml", "r") as sites:
         data = yaml.safe_load(sites)
         for site_name in data:
-            site = Site(site_name, data[site_name], search_config)
-            site.check(include_known=options.include_known)
-            if any(site.offers) or site.error is not None:
-                results.append(site)
+            if site_name not in search_config_dict["site-blocklist"]:
+                site = Site(site_name, data[site_name], search_config)
+                site.check(include_known=options.include_known)
+                if any(site.offers) or site.error is not None:
+                    results.append(site)
+            else:
+                print(LOG_NOT_CRAWLING.format(site_name))
     if results:
         v(LOG_NEW_RESULTS)
         mail_subject, mail_text = format_mail(results)
