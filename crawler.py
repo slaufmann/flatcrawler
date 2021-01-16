@@ -419,6 +419,7 @@ def timer_file():
     return f"""\
 [Unit]
 Description=Check multiple websites for new flat exposes
+Requires=flatcrawler.service
 
 [Timer]
 OnUnitActiveSec={CHECK_INTERVAL}s
