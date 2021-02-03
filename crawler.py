@@ -101,8 +101,13 @@ class SearchConfig:
                 self.config["no_1st_floor"] = (
                     True if self.config["floor_min"] > 1 else False
                 )
-            if "site-blocklist" in data:
+            if "site-blocklist" in data and data["site-blocklist"] is not None:
                 self.config["site-blocklist"] = data["site-blocklist"].copy()
+            else:
+                self.config["site-blocklist"] = []
+
+    def get_blocklist(self):
+        return self.config["site-blocklist"]
 
     def get_config(self):
         return self.config
@@ -300,7 +305,7 @@ def main(options):
     with open("sites.yaml", "r") as sites:
         data = yaml.safe_load(sites)
         for site_name in data:
-            if site_name not in search_config.get_config()["site-blocklist"]:
+            if site_name not in search_config.get_blocklist():
                 site = Site(site_name, data[site_name], search_config)
                 site.check(include_known=options.include_known)
                 if any(site.offers) or site.error is not None:
