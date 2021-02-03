@@ -149,6 +149,7 @@ class Site:
         v(LOG_CRAWLING.format(self.name))
         self.error = None
         try:
+            vv(self.url)
             result = requests.get(self.url, headers=HEADERS)
             if not result.ok:
                 self.error = ERR_NOT_FOUND.format(
