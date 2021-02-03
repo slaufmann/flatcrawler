@@ -46,7 +46,22 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email import encoders
-from config import MailConfig
+import yaml
+
+
+class MailConfig:
+    def __init__(self):
+        with open("config.yaml", "r") as config_file:
+            data = yaml.safe_load(config_file)
+            if "mail" in data:
+                yaml_data = data["mail"]
+                self.server = yaml_data["server"]
+                self.user = yaml_data["user"]
+                self.password = yaml_data["password"]
+                self.from_ = yaml_data["from"]
+                self.reply_to = yaml_data["reply_to"]
+                self.recipient = yaml_data["recipient"]
+                self.bcc_recipients = yaml_data["bcc_recipients"]
 
 
 class Mail(object):
@@ -63,6 +78,8 @@ class Mail(object):
             bcc (Union[string, List[string]]): A single email address or a
                 list of addresses to BCC the data to.
         """
+        self.mail_config = MailConfig()
+
         if attachments:
             msg = MIMEMultipart()
             msg.attach(MIMEText(text))
@@ -80,8 +97,8 @@ class Mail(object):
 
         msg["Subject"] = subject
         msg["To"] = to
-        msg["From"] = MailConfig.from_
-        msg["Reply-To"] = MailConfig.reply_to
+        msg["From"] = self.mail_config.from_
+        msg["Reply-To"] = self.mail_config.reply_to
         self.email = {"address": to, "msg": msg}
         self.bcc = bcc
 
@@ -112,13 +129,13 @@ class Mail(object):
                 try:
                     ## SMTPlib-Code from mkyong.com
                     ## http://www.mkyong.com/python/how-do-send-email-in-python-via-smtplib/
-                    smtpserver = smtplib.SMTP(MailConfig.server)
+                    smtpserver = smtplib.SMTP(self.mail_config.server)
                     smtpserver.ehlo()
                     smtpserver.starttls()
                     smtpserver.ehlo()
-                    smtpserver.login(MailConfig.user, MailConfig.password)
+                    smtpserver.login(self.mail_config.user, self.mail_config.password)
                     smtpserver.sendmail(
-                        MailConfig.user, to, self.email["msg"].as_string()
+                        self.mail_config.user, to, self.email["msg"].as_string()
                     )
                 except smtplib.SMTPAuthenticationError:
                     print("Failed sending: Authentication Error")

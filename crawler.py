@@ -8,7 +8,7 @@ flatcrawler -- Crawl flat offer websites for new flats.
 If run periodically, this script will notify you of new offers quickly as they appear
 online.
 
-For each site configured in sites.py, retrieve the website HTML and scan it for the
+For each site configured in sites.yaml, retrieve the website HTML and scan it for the
 presence of certain strings and links. Create `Offer` objects for each expose link
 found. Will optionally retrieve the offer links as well scan them for additional details
 on the offer.
@@ -32,16 +32,16 @@ from argparse import ArgumentParser
 from bs4 import BeautifulSoup
 import requests
 import sendmail
-from sites import sites as site_configs
-from config import MailConfig
+import yaml
 
 seconds = 1
 minutes = 60 * seconds
 hours = 60 * minutes
 
+mail_config = sendmail.MailConfig()
 
 ### Basic settings
-RECIPIENTS = [MailConfig.recipient, *MailConfig.bcc_recipients]
+RECIPIENTS = [mail_config.recipient, *mail_config.bcc_recipients]
 CHECK_INTERVAL = 1 * hours
 URL_PRINT_LENGTH = 300  # print at maximimum n chars of the url in error messages
 KNOWN_FILE = "known.txt"
@@ -73,6 +73,7 @@ ERR_EXPOSE_CONNECTION = (
 ERR_EXPOSE_NOT_FOUND = ERR_NOT_FOUND
 
 LOG_CRAWLING = "crawling {}"
+LOG_NOT_CRAWLING = "NOT crawling {} - on blocklist"
 LOG_NO_FLATS = "  no flats found at {}"
 LOG_NEW_RESULTS = ":: new results found ::"
 LOG_EMAIL_SENT = ":: email sent ::"
@@ -84,18 +85,42 @@ VERBOSITY = 0
 QUIET = False
 
 
+class SearchConfig:
+    def __init__(self):
+        with open("config.yaml", "r") as config_file:
+            data = yaml.safe_load(config_file)
+            if "search" in data:
+                self.config = data["search"].copy()
+                degewo_districts_joined = "%2C+".join(self.config["degewo_districts"])
+                self.config["degewo_districts"] = degewo_districts_joined
+                gewobag_districts_joined = "&bezirke%5B%5D=".join(
+                    self.config["gewobag_districts"]
+                )
+                self.config["gewobag_districts"] = gewobag_districts_joined
+                self.config["no_1st_floor"] = (
+                    True if self.config["floor_min"] > 1 else False
+                )
+            if "site-blocklist" in data:
+                self.config["site-blocklist"] = data["site-blocklist"].copy()
+
+    def get_config(self):
+        return self.config
+
+
 class Site:
     """
-    A website to be searched for new flats. Takes a *config* dict, which should include
-    most of the fields specified in `sites.py`.
+    A website to be searched for new flats. Takes a *site_config* dict, which should
+    include most of the fields specified in `sites.yaml` and a *search_config* dict
+    which specifies the search criteria as configured in `config.yaml`.
     """
 
-    def __init__(self, config):
-        self.config = defaultdict(lambda: None, config)
+    def __init__(self, name, site_config, search_config):
+        self.name = name
+        self.config = defaultdict(lambda: None, site_config)
+        self.search_config = defaultdict(lambda: None, search_config.get_config())
         self.offers = set()
         self.error = None
-        self.name = self.config["name"]
-        self.url = self.config["url"]
+        self.url = self.config["url"].format(**self.search_config)
         self.none_str = self.config["none-str"]
         self.success_str = self.config["success-str"]
         self.expose_url_pattern = self.config["expose-url-pattern"]
@@ -145,6 +170,9 @@ class Site:
             elif self.none_str and (self.none_str in result.text):
                 v(LOG_NO_FLATS.format(self.name))
             else:
+                debug_dump_site_html(self.name, result.text)
+                print(self.none_str)
+                print(self.success_str)
                 self.error = ERR_CONNECTION.format(
                     self.name, truncate(self.url, URL_PRINT_LENGTH)
                 )
@@ -263,14 +291,21 @@ class OfferDetails:
 
 
 def main(options):
+    search_config = SearchConfig()
+
     """Check all pages, send emails if any offers or errors."""
     results = []
 
-    for site_config in site_configs:
-        site = Site(site_config)
-        site.check(include_known=options.include_known)
-        if any(site.offers) or site.error is not None:
-            results.append(site)
+    with open("sites.yaml", "r") as sites:
+        data = yaml.safe_load(sites)
+        for site_name in data:
+            if site_name not in search_config_dict["site-blocklist"]:
+                site = Site(site_name, data[site_name], search_config)
+                site.check(include_known=options.include_known)
+                if any(site.offers) or site.error is not None:
+                    results.append(site)
+            else:
+                print(LOG_NOT_CRAWLING.format(site_name))
     if results:
         v(LOG_NEW_RESULTS)
         mail_subject, mail_text = format_mail(results)

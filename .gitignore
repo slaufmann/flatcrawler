@@ -1,6 +1,8 @@
+# custom config data
+config.py
 
 # login data
-config.py
+config.yaml
 
 # known flats & errors file
 known.txt
