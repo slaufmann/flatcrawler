@@ -38,10 +38,7 @@ seconds = 1
 minutes = 60 * seconds
 hours = 60 * minutes
 
-mail_config = sendmail.MailConfig()
-
 ### Basic settings
-RECIPIENTS = [mail_config.recipient, *mail_config.bcc_recipients]
 CHECK_INTERVAL = 1 * hours
 URL_PRINT_LENGTH = 300  # print at maximimum n chars of the url in error messages
 KNOWN_FILE = "known.txt"
@@ -85,32 +82,34 @@ VERBOSITY = 0
 QUIET = False
 
 
-class SearchConfig:
-    def __init__(self):
-        self.config = defaultdict(lambda: None)
-        with open("config.yaml", "r") as config_file:
-            data = yaml.safe_load(config_file)
-            if "search" in data:
-                self.config.update(data["search"].copy())
-                degewo_districts_joined = "%2C+".join(self.config["degewo_districts"])
-                self.config["degewo_districts"] = degewo_districts_joined
-                gewobag_districts_joined = "&bezirke%5B%5D=".join(
-                    self.config["gewobag_districts"]
+def load_config(file="config.yaml"):
+    with open(file, "r") as config_file:
+        data = yaml.safe_load(config_file)
+        search_config = defaultdict(lambda: None, data["search"] or {})
+        search_config["degewo_districts"] = "%2C+".join(
+            search_config["degewo_districts"] or []
+        )
+        search_config["gewobag_districts"] = "&bezirke%5B%5D=".join(
+            search_config["gewobag_districts"] or []
+        )
+        search_config["no_1st_floor"] = (search_config["floor_min"] or 0) > 1
+        search_config["site-blocklist"] = data["site-blocklist"] or []
+        mail_config = defaultdict(lambda: None, data["mail"] or {})
+    return search_config, sendmail.MailConfig(mail_config)
+
+
+def load_sites(search_config, file="sites.yaml"):
+    sites = []
+    with open(file, "r") as sites_file:
+        data = yaml.safe_load(sites_file)
+        for site_name, site_data in data.items():
+            if site_name not in search_config["site-blocklist"]:
+                sites.append(
+                    Site(site_name, defaultdict(lambda: None, site_data), search_config)
                 )
-                self.config["gewobag_districts"] = gewobag_districts_joined
-                self.config["no_1st_floor"] = (
-                    True if self.config["floor_min"] > 1 else False
-                )
-            if "site-blocklist" in data and data["site-blocklist"] is not None:
-                self.config["site-blocklist"] = data["site-blocklist"].copy()
             else:
-                self.config["site-blocklist"] = []
-
-    def get_blocklist(self):
-        return self.config["site-blocklist"]
-
-    def get_config(self):
-        return self.config
+                v(LOG_NOT_CRAWLING.format(site_name))
+    return sites
 
 
 class Site:
@@ -122,15 +121,20 @@ class Site:
 
     def __init__(self, name, site_config, search_config):
         self.name = name
-        self.config = defaultdict(lambda: None, site_config)
-        self.search_config = search_config.get_config()
         self.offers = set()
         self.error = None
-        self.url = self.config["url"].format(**self.search_config)
-        self.none_str = self.config["none-str"]
-        self.success_str = self.config["success-str"]
-        self.expose_url_pattern = self.config["expose-url-pattern"]
-        self.expose_details = self.config["expose-details"]
+        self.url = site_config["url"].format(**search_config)
+        self.none_str = site_config["none-str"]
+        self.success_str = site_config["success-str"]
+        self.expose_url_pattern = site_config["expose-url-pattern"]
+        self.expose_details = site_config["expose-details"]
+
+        self.post_parameters = site_config["post_parameters"]
+        self.response_is_json = site_config["post_parameters"] is not None
+        self.expose_url = site_config["expose-url"]
+        self.expose_details_not_in_expose_url = bool(
+            site_config["expose-details-not-in-expose-url"]
+        )
 
     def check(self, retries=2, backoff=1, include_known=False):
         """
@@ -297,28 +301,21 @@ class OfferDetails:
 
 
 def main(options):
-    search_config = SearchConfig()
-
     """Check all pages, send emails if any offers or errors."""
+    search_config, mail_config = load_config()
+    sites = load_sites(search_config)
     results = []
-
-    with open("sites.yaml", "r") as sites:
-        data = yaml.safe_load(sites)
-        for site_name in data:
-            if site_name not in search_config.get_blocklist():
-                site = Site(site_name, data[site_name], search_config)
-                site.check(include_known=options.include_known)
-                if any(site.offers) or site.error is not None:
-                    results.append(site)
-            else:
-                print(LOG_NOT_CRAWLING.format(site_name))
+    for site in sites:
+        site.check(include_known=options.include_known)
+        if any(site.offers) or site.error:
+            results.append(site)
     if results:
         v(LOG_NEW_RESULTS)
         mail_subject, mail_text = format_mail(results)
         if options.no_email:
             print(f"{mail_subject}\n\n{mail_text}")
         else:
-            send_mail(mail_subject, mail_text)
+            send_mail(mail_config, mail_subject, mail_text)
             v(LOG_EMAIL_SENT)
         vv(results)
     else:
@@ -344,11 +341,11 @@ def format_mail(results):
     return EMAIL_SUBJECT.format(offers_count), text
 
 
-def send_mail(subject, text):
+def send_mail(mail_config, subject, text):
     """
     Send an email to the configured recipients containing the given subject and content.
     """
-    mail = sendmail.Mail(RECIPIENTS[0], subject, text, bcc=RECIPIENTS[1:])
+    mail = sendmail.Mail(mail_config, subject, text)
     mail.send()
 
 

@@ -50,35 +50,30 @@ import yaml
 
 
 class MailConfig:
-    def __init__(self):
-        with open("config.yaml", "r") as config_file:
-            data = yaml.safe_load(config_file)
-            if "mail" in data:
-                yaml_data = data["mail"]
-                self.server = yaml_data["server"]
-                self.user = yaml_data["user"]
-                self.password = yaml_data["password"]
-                self.from_ = yaml_data["from"]
-                self.reply_to = yaml_data["reply_to"]
-                self.recipient = yaml_data["recipient"]
-                self.bcc_recipients = yaml_data["bcc_recipients"]
+    def __init__(self, mail_config):
+        self.server = mail_config["server"]
+        self.user = mail_config["user"]
+        self.password = mail_config["password"]
+        self.from_ = mail_config["from"]
+        self.reply_to = mail_config["reply_to"]
+        self.recipient = mail_config["recipient"]
+        self.bcc_recipients = mail_config["bcc_recipients"]
 
 
 class Mail(object):
-    def __init__(self, to, subject="", text="", attachments={}, bcc=None):
+    def __init__(self, mail_config, subject="", text="", attachments={}):
         """
         Create an email.
         
         Args:
-            to (str): Email address to send to
+            mail_config (MailConfig): Configuration containing mostly account login and
+                recipient info.
             subject (str): Email subject line
             text (str): The email text
             attachments (Mapping[string, bytes]): A filename and the content
                 encoded as a bytes-sequence.
-            bcc (Union[string, List[string]]): A single email address or a
-                list of addresses to BCC the data to.
         """
-        self.mail_config = MailConfig()
+        self.mail_config = mail_config
 
         if attachments:
             msg = MIMEMultipart()
@@ -96,11 +91,11 @@ class Mail(object):
             msg = MIMEText(text)
 
         msg["Subject"] = subject
-        msg["To"] = to
+        msg["To"] = self.mail_config.to
         msg["From"] = self.mail_config.from_
         msg["Reply-To"] = self.mail_config.reply_to
-        self.email = {"address": to, "msg": msg}
-        self.bcc = bcc
+        self.email = {"address": self.mail_config.to, "msg": msg}
+        self.bcc = self.mail_config.bcc_recipients
 
     def send(self, retries=3):
         """
