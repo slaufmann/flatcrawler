@@ -87,10 +87,11 @@ QUIET = False
 
 class SearchConfig:
     def __init__(self):
+        self.config = defaultdict(lambda: None)
         with open("config.yaml", "r") as config_file:
             data = yaml.safe_load(config_file)
             if "search" in data:
-                self.config = data["search"].copy()
+                self.config.update(data["search"].copy())
                 degewo_districts_joined = "%2C+".join(self.config["degewo_districts"])
                 self.config["degewo_districts"] = degewo_districts_joined
                 gewobag_districts_joined = "&bezirke%5B%5D=".join(
@@ -117,7 +118,7 @@ class Site:
     def __init__(self, name, site_config, search_config):
         self.name = name
         self.config = defaultdict(lambda: None, site_config)
-        self.search_config = defaultdict(lambda: None, search_config.get_config())
+        self.search_config = search_config.get_config()
         self.offers = set()
         self.error = None
         self.url = self.config["url"].format(**self.search_config)
@@ -299,7 +300,7 @@ def main(options):
     with open("sites.yaml", "r") as sites:
         data = yaml.safe_load(sites)
         for site_name in data:
-            if site_name not in search_config_dict["site-blocklist"]:
+            if site_name not in search_config.get_config()["site-blocklist"]:
                 site = Site(site_name, data[site_name], search_config)
                 site.check(include_known=options.include_known)
                 if any(site.offers) or site.error is not None:
