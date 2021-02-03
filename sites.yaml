@@ -17,13 +17,13 @@ Berolina:
   none-str: Momentan sind leider keine Immobilien in unserem Angebot verfügbar.
 Gemeinnützige Baugenossenschaft Steglitz e.G.:
   url: https://www.gbst-berlin.de/Mietangebote/Freie-Wohnungen
-  none-str: "<td class=\"cm_table cm_firstcol\" style=\"text-align: left;\"><p><br /></p></td>"
-  success-str: <td class=\"cm_table cm_lastcol\">
+  none-str: '<td class="cm_table cm_firstcol" style="text-align: left;"><p><br /></p></td>'
+  success-str: <td class="cm_table cm_lastcol">
   expose-url-pattern: https://public\.od\.cm4allbusiness\.de/\.cm4all/uro/W4BOD0AVBPF3/1_Mietangebote/Expos%C3%A9/.+?\.pdf.+?
 Wohnungsbaugenossenschaft DPF e.G.:
   url: https://www.dpfonline.de/interessenten/immobilien/
   success-str: <div class="immo-a-info">
-  expose-url-pattern: <a href="https://www\\.dpfonline\\.de/(immobilien/.+?)/">
+  expose-url-pattern: <a href="https://www\.dpfonline\.de/(immobilien/.+?)/">
   expose-details:
     title: <h1 class="immo-caption">\s+?(.+?)\s+?</h1>
     price: <td>Kaltmiete</td>\s+?<td>\s+?(.+?)\s+?</td>
