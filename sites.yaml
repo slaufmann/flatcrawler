@@ -108,3 +108,6 @@ Gewobag:
     rooms: <div class="detail-label">Anzahl Zimmer</div>\s+<div class="detail-value">(.+?)</div>
     area: <div class="detail-label">Fl&auml;che in m²</div>\s+<div class="detail-value">(.+?)</div>
     vacantby: <div class="detail-label">Frei ab</div>\s+\s+<div class="detail-value capitalize">(.+?)</div>
+WBM:
+  url: https://wbm.de/wohnungen-berlin/angebote
+  none-str: Sobald neue Wohnungsangebote zur Verfügung stehen, werden diese hier veröffentlicht.
