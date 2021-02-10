@@ -64,9 +64,10 @@ Habitat e.G.:
   none-str: Derzeit können wir Ihnen leider keine freien Wohnungen anbieten.
 EWG Pankow:
   url: https://www.ewg-pankow.de/wohnen/
-  none-str: Aktuell ist leider kein Wohnungsangebot verfügbar.
-  success-str: zum Exposé
-  expose-url-pattern: href="(wohnen/wohnungsangebote/wohnungsdetails/.+?html)
+  none-str: aktuell-ist-leider-kein-wohnungsangebot-verfuegbar/">
+  expose-url-pattern: href="https://www.ewg-pankow.de/(wohnungen/.+?/)
+  expose-details:
+    title: <h1 class="elementor-heading-title elementor-size-default">(.+?)</h1>
 Vaterländischer Bauverein:
   url: https://www.vbveg.de/wohnungsangebote.html
   none-str: Derzeit stehen keine Wohnungsangebote zur Verfügung.
