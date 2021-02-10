@@ -93,7 +93,7 @@ def load_config(file="config.yaml"):
             search_config["gewobag_districts"] or []
         )
         search_config["no_1st_floor"] = (search_config["floor_min"] or 0) > 1
-        search_config["site-blocklist"] = data["site-blocklist"] or []
+        search_config["site-blocklist"] = search_config["site-blocklist"] or []
         mail_config = defaultdict(lambda: None, data["mail"] or {})
     return search_config, sendmail.MailConfig(mail_config)
 
